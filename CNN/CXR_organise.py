@@ -9,18 +9,24 @@ import zipfile
 import os
 import shutil
 
-csv_file = "Data_Entry_2017.csv"
-zipped_files = "archives"
-categories = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+# Declaring variables
+csv_file = "Data_Entry_2017.csv"						# CSV file for how to organise the image data (which categories they belong to)
+zipped_files = "/archives"								# Where the raw image data is located
+categories = []											# Initializing a list of categories. Will be filled later
 
-image_name_column = 1
-category_column = 2
+# This stuff you just have to know
+image_name_column = "Image_name"						# Name of column in which "image name" is placed
+category_column = "Diagnosis"							# Name of column in which "diagnosis" is placed
 
 
-pd.read_csv(csv_file)
+dataframe = pd.read_csv(csv_file)
 
+
+# This isn't done yet
 def extract_organise(file):
-	
+	for member in file.getmembers()
+		row = dataframe.loc[dataframe[image_name_column] == str(member)]
+		file.extract(member, '/data/' + str(dataframe[category_column[row]]))
 
 
 
@@ -48,4 +54,5 @@ for filename in os.listdir(zipped_files):
 	elif filename.endswith('.zip'):
 		file = zipfile.ZipFile(filename, 'r')
 
-	# Now we have a compressed file. Start extracting using the 
+	# Now that we have the compressed file loaded, call the extract + organise function
+	extract_organise(file, )
