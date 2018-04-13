@@ -15,7 +15,7 @@ import ntpath
 # Declaring variables
 csv_file = "Data_Entry_2017.csv"						# CSV file for how to organise the image data (which categories they belong to)
 zipped_files = "archives"								# Where the raw image data is located
-categories = []											# Initializing a list of categories. Will be filled later
+category_list = []											# Initializing a list of categories. Will be filled later
 subfolder = "images"									# If the images are stored within a subfolder, write name in quotes. Otherwise use None
 subfolder_length = len(subfolder) + 1
 
@@ -23,10 +23,26 @@ subfolder_length = len(subfolder) + 1
 image_name_column = "Image Index"						# Name of column in which "image name" is placed
 category_column = "Finding Labels"						# Name of column in which "diagnosis" is placed
 
+# Make data folders
+shutil.rmtree('data', ignore_errors=True)
+os.mkdir('data')
+os.mkdir('data/train')
+os.mkdir('data/validation')
+os.mkdir('data/test')
+
 # Load the CSV file into variable "dataframe" so we can organise
 dataframe = pd.read_csv(csv_file)
-# Find all unique values in column "Finding labels". Basically a list of all diagnoses
-categories = dataframe[category_column].unique()
+# There are labels that have multiple "diagnoses". Remove all but the first. 
+for index, row in dataframe.iterrows():
+	if row[category_column].contains("|"):
+		row[category_column] = row[category_column].split('|')[0]
+# Find all unique values in column "Finding labels". Basically a list of all diagnoses. Make a folder for each
+category_list = dataframe[category_column].unique()
+for category in category_list:
+		os.mkdir('data/train/' + str(category_column))
+		os.mkdir('data/validation/' + str(category_column))
+		os.mkdir('data/test/' + str(category_column))
+
 
 
 # This isn't done yet
@@ -40,16 +56,9 @@ def extract_organise(file):
 		category = row[category_column]
 		if not os.path.isdir("data/" + str(category)):
 			os.mkdir("data/" + str(category))
-			print "Created directory for " + category + " samples"
+			print "Created directory for " + category + "samples"
 		file.extract(member, path='data/')
 
-
-
-shutil.rmtree('data', ignore_errors=True)
-os.mkdir('data')
-os.mkdir('data/train')
-os.mkdir('data/validation')
-os.mkdir('data/test')
 
 # Iterate through all files in your "tar_files" folder 
 # Filename is the zipped file, and file is python's temporary loaded name for the file
