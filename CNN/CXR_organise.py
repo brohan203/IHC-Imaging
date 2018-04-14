@@ -32,16 +32,20 @@ os.mkdir('data/test')
 
 # Load the CSV file into variable "dataframe" so we can organise
 dataframe = pd.read_csv(csv_file)
-# There are labels that have multiple "diagnoses". Remove all but the first. 
+# There are labels that have multiple "diagnoses". Remove all but the first label. 
 for index, row in dataframe.iterrows():
-	if row[category_column].contains("|"):
-		row[category_column] = row[category_column].split('|')[0]
+	if "|" in row[category_column]:
+		dataframe.loc[index, category_column] = row[category_column].split('|')[0]
+
+
 # Find all unique values in column "Finding labels". Basically a list of all diagnoses. Make a folder for each
 category_list = dataframe[category_column].unique()
 for category in category_list:
-		os.mkdir('data/train/' + str(category_column))
-		os.mkdir('data/validation/' + str(category_column))
-		os.mkdir('data/test/' + str(category_column))
+	if not os.path.isdir('data/train/' + str(category)):
+		print "Making " + category + " directory"
+		os.mkdir('data/train/' + str(category))
+		os.mkdir('data/validation/' + str(category))
+		os.mkdir('data/test/' + str(category))
 
 
 
