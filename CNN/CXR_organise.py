@@ -11,6 +11,7 @@ import zipfile
 import os
 import shutil
 import ntpath
+import subprocess
 
 # Declaring variables
 csv_file = "Data_Entry_2017.csv"						# CSV file for how to organise the image data (which categories they belong to)
@@ -22,13 +23,16 @@ subfolder_length = len(subfolder) + 1
 # This stuff you just have to know
 image_name_column = "Image Index"						# Name of column in which "image name" is placed
 category_column = "Finding Labels"						# Name of column in which "diagnosis" is placed
+half_extract_command = None								# Declaring extract command. Depends on compression method
 
 # Make data folders
 shutil.rmtree('data', ignore_errors=True)
+shutil.rmtree('tmp', ignore_errors=True)
 os.mkdir('data')
 os.mkdir('data/train')
 os.mkdir('data/validation')
 os.mkdir('data/test')
+os.mkdir('tmp')
 
 # Load the CSV file into variable "dataframe" so we can organise
 dataframe = pd.read_csv(csv_file)
@@ -50,42 +54,38 @@ for category in category_list:
 
 
 # This isn't done yet
-def extract_organise(file):
-	for member in file.getmembers():
-		#save = random.randint(1,3)
-		# Get the file name
-		_ , tail = ntpath.split(member.name)
-		# Find the row in with the file's data in the CSV
-		row = dataframe.where[dataframe[image_name_column] == tail]
-		category = row[category_column]
-		if not os.path.isdir("data/" + str(category)):
-			os.mkdir("data/" + str(category))
-			print "Created directory for " + category + "samples"
-		file.extract(member, path='data/')
+def organise():
+
+	for image in os.listdir('tmp/images'):
+		image_name = str(image)
+		df_location = dataframe.loc[dataframe[image_name_column] == image_name]
+		category = str(df_location[category_column])
+		print image_name
+		print df_location[category_column]
+		subprocess.Popen("mv tmp/images/" + image_name + "data/train/" + category)
+
 
 
 # Iterate through all files in your "tar_files" folder 
-# Filename is the zipped file, and file is python's temporary loaded name for the file
-# Works for .tar, .tar.gz, .tgz, .tar.bz2, .tbz, and zip files. Phew!
-for filename in os.listdir(zipped_files):
-
-	# Firstly, load the zipped file into a temporary file... called file.
-	if filename.endswith('.tar'):
-		file = tarfile.open(zipped_files + "/" + filename, 'r')
-
-	elif filename.endswith('.tar.gz') or filename.endswith('.tgz'):
-		file = tarfile.open(zipped_files + "/" + filename, 'r:gz')
-
-	elif filename.endswith('.tar.bz2') or filename.endswith('.tbz'):
-		file = tarfile.open(zipped_files + "/" + filename, 'r:bz2')
-
-	elif filename.endswith('.zip'):
-		file = zipfile.ZipFile(zipped_files + "/" + filename, 'r')
-
-
-
+# Filename is the zipped file, and is extracted to 'tmp' in a folder with its own name
+# Works for .tar, .tar.gz, .tgz, .tar.bz2, .tbz files.
+def extract():
 	print "========================"
 	print "Extracting " + str(filename)
+	for filename in os.listdir(zipped_files):
+		os.mkdir('tmp/' + str(filename))
+		# Firstly, load the zipped file into a temporary file... called file.
+		if filename.endswith('.tar'):
+			subprocess.Popen("tar xf " + filename + " tmp/")
 
-	# Now that we have the compressed file loaded, call the extract + organise function
-	extract_organise(file)
+		elif filename.endswith('.tar.gz') or filename.endswith('.tgz'):
+			subprocess.Popen("tar xzf " + filename + " tmp/")
+
+		elif filename.endswith('.tar.bz2') or filename.endswith('.tbz'):
+			subprocess.Popen("tar xjf " + filename + " tmp/")
+
+
+	# Now that we have the compressed file loaded, call the extract + organise functions
+	print "Beginning extraction and organisation of images. Go grab a drink or somfin"
+	extract()
+	organise()
