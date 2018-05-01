@@ -24,21 +24,21 @@ import numpy as np
 num_classes = 2                                                             # Number of classes should the model should distinguish
 baseMapNum = 32                                                             # No idea what this is loool. Used as 'filter' in Conv2D
 img_width, img_height = 1024, 1024                                          # Width and height of images in dataset
-weight_decay = [1e-4]                                                       # Try different values from 0.0001 to 10 (I think?)
-img_shape = (1024, 1024, 3)                                                   # Shape of the image (width, height, depth)
-epochs = 3                                                                  # How many iterations to do. This is multiplied by 5
+weight_decay = [1e-4, 1e-3, 1e-2, 1e-1, 1e0, 1e1, 1e2]                      # Try different values from 0.0001 to 10 (I think?)
+img_shape = (1024, 1024, 3)                                                 # Shape of the image (width, height, depth)
+epochs = 1                                                                  # How many iterations to do. This is multiplied by 5
 batch_size = 2                                                              # Increase or decrease depending on memory. Higher the better
 
 # Data directories and details
 train_data_dir = 'data/train'                                               # Location of training data (for training the model)
-#validation_data_dir = 'data/validation'                                     # Location of validation data (for estimating training quality)
+validation_data_dir = 'data/validation'                                    # Location of validation data (for estimating training quality)
 test_data_dir = 'data/test'                                                 # Location of testing data (for application)
 nb_train_samples = 10                                                       # How many samples to use in testing
 nb_validation_samples = 4                                                   # How many samples to use in testing
 
 #=================================================================================================================================D
 # Here's our super basic model. It's in a fx in case you want to use multiple runs for optimization and stuff. Will add more than weight decay
-# It doesn't look basic, but it is. Yeah you weren't expecting that, kiddo. Even I don't understand this shit, how do you expect to? Get shrekt m9
+# It doesn't look basic, but it is. Yeah you weren't expecting that. Even I don't understand this shit, how do you expect to? Get shrekt kiddo
 
 def make_run_model(weight_decay):
     model = Sequential()
@@ -105,7 +105,7 @@ def make_run_model(weight_decay):
         class_mode='categorical')
 
     validation_generator = test_datagen.flow_from_directory(
-        test_data_dir,
+        validation_data_dir,
         target_size=(img_width, img_height),
         batch_size=batch_size,
         class_mode='categorical')

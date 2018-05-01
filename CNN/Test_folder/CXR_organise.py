@@ -12,6 +12,7 @@ import os
 import shutil
 import ntpath
 import subprocess
+import random
 
 print "Beginning extraction and organisation process of data"
 
@@ -57,15 +58,35 @@ for category in category_list:
 
 
 
-# This isn't done yet
+# After extraction, organise data into 
 def organise():
-
+	train = 0
+	validation = 0
+	test = 0
+	total = 0
 	for image in os.listdir('tmp/images'):
+		integer = random.randint(1,4)
 		image_name = str(image)
 		row = dataframe.loc[dataframe[image_name_column] == image_name]
 		category = str(row.iloc[0][category_column])
-		print category
-		subprocess.call(["mv", "tmp/images/" + image_name, "data/train/" + category])
+		# Put 25% of data in "train", 25% in "validation", and 50% in "test"
+		if integer == 1:
+			subprocess.call(["mv", "tmp/images/" + image_name, "data/train/" + category])
+			train += 1
+			total += 1
+		elif integer == 2:
+			subprocess.call(["mv", "tmp/images/" + image_name, "data/validation/" + category])
+			validation += 1
+			total += 1
+		else:
+			subprocess.call(["mv", "tmp/images/" + image_name, "data/test/" + category])
+			test += 1
+			total += 1
+	print "Organisation and sorting results:"
+	print "Training folder contains " + str(train) + " images, " + str(float(train/total)) + "percent of data"
+	print "Validation folder contains " + str(validation) + " images, " + str(float(validation/total)) + "percent of data"
+	print "Test folder contains " + str(test) + " images, " + str(float(test/total)) + "percent of data"
+
 
 
 
@@ -89,3 +110,5 @@ extract()
 print "\n========================"
 print "Beginning organisation"
 organise()
+print "\n========================"
+print "Finished organising, process complete."
