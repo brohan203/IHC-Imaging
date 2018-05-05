@@ -51,7 +51,6 @@ param_grid = dict( activation1 = activations, activation2 = activations, activat
                    epochs = epochs,           batch_size = batch_sizes,  baseMapNum = baseMapNums   )
 past_params = []                                                            # Saves all sets of parameters of trials
 past_scores = []                                                            # Saves all score reorts of trials
-current_params = dict()
 runs = 0
 
 #=================================================================================================================================D
@@ -90,14 +89,14 @@ def model_generator( param_dict ):        # Epochs is 1 for test purposes
     model.add(Flatten())
     model.add(Dense(num_classes, activation='softmax'))
 
-    model.summary()
+    #model.summary()
     return model
 
 #=================================================================================================================================D
 # Running the model. Man, I don't understand any of this lol
 # Designed to run from a folder of images
     # Augmentation configuration we will use for training.
-def run_model(model, batch_size=4):
+def run_model(model, batch_size=4, epochs=1):
     train_datagen = ImageDataGenerator(
         rescale=1. / 255,
         featurewise_center=False,
@@ -137,8 +136,6 @@ def run_model(model, batch_size=4):
 
 
 
-    print nb_validation_samples
-    print batch_size
     # Training
     # Run 1
     # With optimization, compilation, and generation
@@ -193,14 +190,14 @@ def run_model(model, batch_size=4):
     score = model.evaluate_generator(
         test_generator, 
         steps=10)
-    print ""
     return score
 
 #=================================================================================================================================
-# Generate parameters for all runs
+# Generate parameters for all runs. I'm just a monkey with a typewriter, man.
 
-def parameter_generator(past_parameters, past_results):
-    parameters = []                                                     # Order: basemapnum
+def parameter_generator():
+    parameters = dict()
+    # If first run, do default parameters
     if runs == 0:
         parameters = dict( activation1 = 'relu', activation2 = 'relu', activation3 = 'relu', 
                            activation4 = 'relu', activation5 = 'relu', activation6 = 'relu', 
@@ -208,28 +205,37 @@ def parameter_generator(past_parameters, past_results):
                            decay4 = 1e-6,        decay5 = 1e-6,        decay6 = 1e-6,
                            dropout1 = 0.3,       dropout2 = 0.4,       dropout3 = 0.5,
                            epochs = 1,           batch_size = 4,       baseMapNum=32        )
+    # If between run 1 and 10, change something randomly from the last run. The number 10 is redundant
+    elif 0 < runs and runs < 10:
+        parameters = past_params[-1]
+        change = random.choice(parameters.keys())
+        parameters[change] = random.choice(param_grid[change])
+    # If more than 10 runs, find best run and change something randomly. Keep doing this however long you want
     else:
-        if scores[-1][1] > scores[-2]:
-            parameters = past_parameters[-1]
-        elif scores[-2] > scores[-1]:
-            parameters = past_parameters[-2]
-    change = random.choice(parameters.keys())
-    parameters[change] = random.choice(param_grid[change])
-    past_params.append(parameters)
-    current_params = parameters
+        while True:
+            best_run_index = past_scores.index(max(past_scores))
+            parameters = past_params[best_run_index]
+            change = random.choice(parameters.keys())
+            parameters[change] = random.choice(param_grid[change])
+            if not parameters in past_params:
+                print "No dupes found, adding parameters"
+                break
     return parameters
 
 
 
 def run():
-    #while True:
-    parameters = parameter_generator(past_params, past_scores)
-    print parameters
-    model = model_generator(parameters)
-    score = run_model(model, batch_size=4)
-    print score
-    past_parameters.append(parameters)
-    past_scores.append(score)
+    while True:
+        global runs
+        parameters = parameter_generator()
+        model = model_generator(parameters)
+        #score = run_model(model)[1]
+        runs += 1
+        #print score
+        past_params.append(parameters)
+        #past_scores.append(score)
+        past_scores.append(random.randint(1, 100))
+        print len(past_params)
 
 run()
 
