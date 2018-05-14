@@ -229,13 +229,12 @@ def run():
         global runs
         parameters = parameter_generator()
         model = model_generator(parameters)
-        #score = run_model(model)[1]
+        score = run_model(model)[1]
         runs += 1
-        #print score
         past_params.append(parameters)
-        #past_scores.append(score)
+        past_scores.append(score)
         past_scores.append(random.randint(1, 100))
-        print len(past_params)
+        print "Run " + str(runs) + " completed with " + str(past_scores[-1]) + " percent accuracy"
 
 run()
 
