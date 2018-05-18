@@ -15,6 +15,8 @@ from keras import regularizers, optimizers
 # Numpy is bae <3
 import numpy as np
 import random
+import os.path
+import pandas as pd
 
 #=================================================================================================================================D
 # The following are parameters for the import data and model. I like to keep them at the top
@@ -33,70 +35,79 @@ train_data_dir = 'data/train'                                               # Lo
 validation_data_dir = 'data/validation'                                     # Location of validation data (for estimating training quality)
 test_data_dir = 'data/test'                                                 # Location of testing data (for application)
 
+
 # Hyperparameters
-activations = ['relu', 'tanh', 'sigmoid']                           # What kind of curve to use for activation layers
-baseMapNums = [32,64,128,256,512,1024]                                      # No idea what this is loool. Used as 'filter' in Conv2D
-weight_decays = [1e-6, 1e-4, 1e-2, 1, 10]
-dropouts = [0.2, 0.3, 0.4, 0.5]                                             # I dunno man, Rah says it makes the model "turn off its brain"
-optimizers = ['rmsprop', 'adam', 'adagrad', 'sgd']                          # Optimizers to optimize...stuff. I really have no idea
-#epochs = [20, 25, 40]                                                       # How many iterations to do. This is multiplied by 5
+activations = ['relu', 'tanh', 'sigmoid']                                   # What kind of curve to use for activation layers
+weight_decays = [1e-6, 1e-4, 1e-2, 1, 10]                                   # I'm so confused
+optimizers = ['rmsprop', 'adam', 'adagrad']                                 # Optimizers to optimize...stuff. I really have no idea
+#batch_sizes = [16, 32, 64, 128]                                            # Higher the better
+batch_sizes = [2]                                                           # Low batch number for testing purposes only
+dropouts = [0.2, 0.3, 0.4, 0.5, 0.6]                                        # I dunno man, Rah says it makes the model "turn off its brain"
+#epochs = [20, 25, 30, 40]                                                  # How many iterations to do. This is multiplied by 5
 epochs = [1, 2]                                                             # Low number of epochs for testing purposes only
-#batch_size = [32, 64, 128]                                                  # Increase or decrease depending on memory. Higher the better                                                              
-batch_sizes = [2, 4]                                                        # Small batches for testing purposes only
+learning_rates = [0.01, 0.1, 0.05, 0.001]                                   # How drastically to edit weights when model guesses wrong
+baseMapNums = [32, 64, 128, 256, 512, 1024]                                 # No idea what this is loool. Used as 'filter' in Conv2D
+
+
 param_grid = dict( activation1 = activations, activation2 = activations, activation3 = activations, 
                    activation4 = activations, activation5 = activations, activation6 = activations, 
-                   decay1 = weight_decays,    decay2 = weight_decays,    decay3 = weight_decays,
-                   decay4 = weight_decays,    decay5 = weight_decays,    decay6 = weight_decays,
+                   decay = weight_decays,     optimizer = optimizers,    batch_size = batch_sizes,
                    dropout1 = dropouts,       dropout2 = dropouts,       dropout3 = dropouts,
-                   epochs = epochs,           batch_size = batch_sizes,  baseMapNum = baseMapNums   )
-past_params = []                                                            # Saves all sets of parameters of trials
-past_scores = []                                                            # Saves all score reorts of trials
-runs = 0
+                   epochs = epochs,           lr1 = learning_rates,      baseMapNum = baseMapNums   )
 
+param_names = ['activation1', 'activation2', 'activation3', 'activation4', 'activation5', 'activation6',
+               'decay',       'optimizer',   'batch_size',  'dropout1',    'dropout2',    'dropout3',
+               'epochs',      'lr1',         'baseMapNum',  'run',         'accuracy',    'loss'        ]
 #=================================================================================================================================D
 # Here are functions that produce/run models and parameters. Want me to explain this shit? Too bad, I can't. Get shrekt, m9
 
 # Give model_generator will make a model with specific hyperparameters
-def model_generator( param_dict ):        # Epochs is 1 for test purposes
+def model_generator( parameters ):
+
+    # Unpackage parameters
+    activation1, activation2, activation3, activation4, activation5, activation6, decay, _, _, dropout1, dropout2, dropout3, _, _, baseMapNum = parameters
+
     model = Sequential()
-    model.add(Conv2D(param_dict['baseMapNum'], (3,3), padding='same', kernel_regularizer=regularizers.l2(param_dict['decay1']), input_shape=img_shape))
-    model.add(Activation(param_dict['activation1']))
+    model.add(Conv2D(baseMapNum, (3,3), padding='same', kernel_regularizer=regularizers.l2(decay), input_shape=img_shape))
+    model.add(Activation(activation1))
     model.add(BatchNormalization())
-    model.add(Conv2D(param_dict['baseMapNum'], (3,3), padding='same', kernel_regularizer=regularizers.l2(param_dict['decay2'])))
-    model.add(Activation(param_dict['activation2']))
+    model.add(Conv2D(baseMapNum, (3,3), padding='same', kernel_regularizer=regularizers.l2(decay)))
+    model.add(Activation(activation2))
     model.add(BatchNormalization())
     model.add(MaxPooling2D(pool_size=(2,2)))
-    model.add(Dropout(param_dict['dropout1']))
+    model.add(Dropout(dropout1))
 
-    model.add(Conv2D(2*param_dict['baseMapNum'], (3,3), padding='same', kernel_regularizer=regularizers.l2(param_dict['decay3'])))
-    model.add(Activation(param_dict['activation3']))
+    model.add(Conv2D(2*baseMapNum, (3,3), padding='same', kernel_regularizer=regularizers.l2(decay)))
+    model.add(Activation(activation3))
     model.add(BatchNormalization())
-    model.add(Conv2D(2*param_dict['baseMapNum'], (3,3), padding='same', kernel_regularizer=regularizers.l2(param_dict['decay4'])))
-    model.add(Activation(param_dict['activation4']))
+    model.add(Conv2D(2*baseMapNum, (3,3), padding='same', kernel_regularizer=regularizers.l2(decay)))
+    model.add(Activation(activation4))
     model.add(BatchNormalization())
     model.add(MaxPooling2D(pool_size=(2,2)))
-    model.add(Dropout(param_dict['dropout2']))
+    model.add(Dropout(dropout2))
 
-    model.add(Conv2D(4*param_dict['baseMapNum'], (3,3), padding='same', kernel_regularizer=regularizers.l2(param_dict['decay5'])))
-    model.add(Activation(param_dict['activation5']))
+    model.add(Conv2D(4*baseMapNum, (3,3), padding='same', kernel_regularizer=regularizers.l2(decay)))
+    model.add(Activation(activation5))
     model.add(BatchNormalization())
-    model.add(Conv2D(4*param_dict['baseMapNum'], (3,3), padding='same', kernel_regularizer=regularizers.l2(param_dict['decay6'])))
-    model.add(Activation(param_dict['activation6']))
+    model.add(Conv2D(4*baseMapNum, (3,3), padding='same', kernel_regularizer=regularizers.l2(decay)))
+    model.add(Activation(activation6))
     model.add(BatchNormalization())
     model.add(MaxPooling2D(pool_size=(2,2)))
-    model.add(Dropout(param_dict['dropout3']))
+    model.add(Dropout(dropout3))
 
     model.add(Flatten())
     model.add(Dense(num_classes, activation='softmax'))
 
-    #model.summary()
     return model
 
 #=================================================================================================================================D
 # Running the model. Man, I don't understand any of this lol
 # Designed to run from a folder of images
     # Augmentation configuration we will use for training.
-def run_model(model, batch_size=4, epochs=1):
+def run_model(model, parameters):
+    # Unpackage parameters
+    _, _, _, _, _, _, _, optimizer, batch_size, _, _, _, epochs, lr1, _ = parameters
+
     train_datagen = ImageDataGenerator(
         rescale=1. / 255,
         featurewise_center=False,
@@ -105,7 +116,7 @@ def run_model(model, batch_size=4, epochs=1):
         samplewise_std_normalization=False,
         zca_whitening=False,
         rotation_range=0,
-        width_shift_range=0.1,
+       width_shift_range=0.1,
         height_shift_range=0.1,
         horizontal_flip=False,
         vertical_flip=False
@@ -119,69 +130,62 @@ def run_model(model, batch_size=4, epochs=1):
     train_generator = train_datagen.flow_from_directory(
         train_data_dir,
         target_size=(img_width, img_height),
-        batch_size=batch_size,
+        batch_size=param_dict['batch_size'],
         class_mode='categorical')
 
     validation_generator = test_datagen.flow_from_directory(
         validation_data_dir,
         target_size=(img_width, img_height),
-        batch_size=batch_size,
+        batch_size=param_dict['batch_size'],
         class_mode='categorical')
 
     test_generator = test_datagen.flow_from_directory(
         test_data_dir,
         target_size=(img_width, img_height),
-        batch_size=batch_size,
+        batch_size=param_dict['batch_size'],
         class_mode='categorical')
-
 
 
     # Training
     # Run 1
     # With optimization, compilation, and generation
-    opt_rms = keras.optimizers.rmsprop(lr=0.001,decay=1e-6)
+    opt_rms = keras.optimizers.rmsprop(lr=param_dict['lr1'],decay=1e-6)
     model.compile(loss='categorical_crossentropy',
             optimizer=opt_rms,
             metrics=['accuracy'])
     model.fit_generator(
         train_generator,
-        steps_per_epoch=nb_train_samples // batch_size,
-        epochs=epochs*3,
+        steps_per_epoch=nb_train_samples // param_dict['batch_size'],
+        epochs=param_dict['epochs']*3,
         validation_data=validation_generator,
-        validation_steps=nb_validation_samples // batch_size)
-    model.save_weights(model_name + '_ep' + epochs*3 + '.h5')
-    scores1 = model.evaluate_generator(
-        test_generator, 
-        steps=10)
+        validation_steps=nb_validation_samples // param_dict['batch_size'])
 
     # Run 2
     # With optimization, compilation, and generation
-    opt_rms = keras.optimizers.rmsprop(lr=0.0005,decay=1e-6)
+    opt_rms = keras.optimizers.rmsprop(lr=param_dict['lr1']/2,decay=1e-6)
     model.compile(loss='categorical_crossentropy',
             optimizer=opt_rms,
             metrics=['accuracy'])
     model.fit_generator(
         train_generator,
-        steps_per_epoch=nb_train_samples // batch_size,
-        epochs=epochs,
+        steps_per_epoch=nb_train_samples // param_dict['batch_size'],
+        epochs=param_dict['epochs'],
         validation_data=validation_generator,
-        validation_steps=nb_validation_samples // batch_size)
-    scores2 = model.evaluate_generator(
-        test_generator, 
-        steps=10)
+        validation_steps=nb_validation_samples // param_dict['batch_size'])
+
     # Run 3
     # With optimization, compilation, and generation
-    opt_rms = keras.optimizers.rmsprop(lr=0.0003,decay=1e-6)
+    opt_rms = keras.optimizers.rmsprop(lr=param_dict['lr1']/3,decay=1e-6)
     model.compile(loss='categorical_crossentropy',
             optimizer=opt_rms,
             metrics=['accuracy'])
     model.fit_generator(
         train_generator,
-        steps_per_epoch=nb_train_samples // batch_size,
-        epochs=epochs,
+        steps_per_epoch=nb_train_samples // param_dict['batch_size'],
+        epochs=param_dict['epochs'],
         validation_data=validation_generator,
-        validation_steps=nb_validation_samples // batch_size)
-    model.save_weights(model_name + '_ep' + epochs*5 + '.h5')
+        validation_steps=nb_validation_samples // param_dict['batch_size'])
+    model.save_weights(model_name + '_ep' + str(epochs*5) + '.h5')
 
 
 
@@ -190,52 +194,101 @@ def run_model(model, batch_size=4, epochs=1):
     score = model.evaluate_generator(
         test_generator, 
         steps=10)
+    print (score)
     return score
 
 #=================================================================================================================================
+
 # Generate parameters for all runs. I'm just a monkey with a typewriter, man.
 
 def parameter_generator():
-    parameters = dict()
+    global past_params
+    global param_grid
+    parameters = []
+    run = 0
     # If first run, do default parameters
-    if runs == 0:
-        parameters = dict( activation1 = 'relu', activation2 = 'relu', activation3 = 'relu', 
-                           activation4 = 'relu', activation5 = 'relu', activation6 = 'relu', 
-                           decay1 = 1e-6,        decay2 = 1e-6,        decay3 = 1e-6,
-                           decay4 = 1e-6,        decay5 = 1e-6,        decay6 = 1e-6,
-                           dropout1 = 0.3,       dropout2 = 0.4,       dropout3 = 0.5,
-                           epochs = 1,           batch_size = 4,       baseMapNum=32        )
-    # If between run 1 and 10, change something randomly from the last run. The number 10 is redundant
-    elif 0 < runs and runs < 10:
-        parameters = past_params[-1]
-        change = random.choice(parameters.keys())
-        parameters[change] = random.choice(param_grid[change])
-    # If more than 10 runs, find best run and change something randomly. Keep doing this however long you want
+    if not os.path.isfile(model_name + '_results.csv'):
+        parameters = ['relu', 'relu', 'relu', 'relu', 'relu', 'relu', 
+                      1e-6, 'rmsprop', 2, 0.3, 0.4, 0.5, 1, 0.001, 2 ]
+
+
+    # NEEDS EDITS
+    # If at a run divisible by 10, use the best score and go from there
+    elif past_params.index[-1]%10 == 0 & past_params.index[-1] > 5:
+        while True:
+            index = past_params['accuracy'].idmax()
+            parameters = past_params.values.tolist()[index]
+            run = parameters[15]
+            del parameters[-3:]
+            index = np.random.randint(0, 15)
+            hyperparameter = param_names[index]
+            parameters[index] = random.choice(list(param_grid[hyperparameter]))
+            if not parameters in past_params.values:
+                break
+
+    # ALSO NEEDS EDITS
+    # Otherwise just randomise one parameter
     else:
         while True:
-            best_run_index = past_scores.index(max(past_scores))
-            parameters = past_params[best_run_index]
-            change = random.choice(parameters.keys())
-            parameters[change] = random.choice(param_grid[change])
-            if not parameters in past_params:
-                print "No dupes found, adding parameters"
+            parameters = past_params.values.tolist()[-1]
+            run = parameters[15]
+            del parameters[-3:]
+            index = np.random.randint(0, 15)
+            hyperparameter = param_names[index]
+            parameters[index] = random.choice(list(param_grid[hyperparameter]))
+            if not parameters in past_params.values:
                 break
-    return parameters
 
+    return parameters, run
+
+
+past_params = None
+if os.path.isfile(model_name + "_results.csv"):
+    past_params = pd.read_csv(model_name + "_results.csv")
+    # Pop unnamed column 
 
 
 def run():
-    while True:
-        global runs
-        parameters = parameter_generator()
-        model = model_generator(parameters)
-        score = run_model(model)[1]
-        runs += 1
-        past_params.append(parameters)
-        past_scores.append(score)
-        past_scores.append(random.randint(1, 100))
-        print "Run " + str(runs) + " completed with " + str(past_scores[-1]) + " percent accuracy"
+    # Generate parameters. Uses randomization
+    #print ("\nCreating parameters...\n")
+    params, run = parameter_generator()
+    # Make model based on parameters
+    #print ("\nCreating model...\n")
+    #model = model_generator(params)
+    # Run model with parameters
+    #print ("\nRunning model...\n")
+    #score = run_model(model, param_dict)
+    score = [566, 0.1] # Made up results for testing, delete for real run
+    #print ("\nRecording results...\n")
+    # Add parameters + results to past_params
+    params.append(run)
+    params.append(score[1])
+    params.append(score[0])
+    global param_names
+    if not os.path.isfile(model_name + '_results.csv'):
+        past_params = pd.DataFrame(np.array(params).reshape(1,18), columns = param_names)
+        past_params.to_csv(model_name + "_results.csv")
+    elif os.path.isfile(model_name + '_results.csv'):
+        global past_params
+        past_params = past_params.values
+        past_params.append(params)
+        past_params = pd.DataFrame(past_params, columns = param_names)
+        past_params.to_csv(model_name + '_results.csv')
+    print ("Run completed with " + str(params[16]*100) + " percent accuracy")
 
-run()
+
+for i in range(3):
+    run()
+
+
+
+"""
+To do:
+Add dataframe + csv support
+Add optimizer to run_model
+"""
+
+
+
 
 
