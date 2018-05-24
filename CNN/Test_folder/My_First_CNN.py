@@ -265,16 +265,17 @@ def run():
     params.append(score[1])
     params.append(score[0])
     global param_names
+    global past_params
     if not os.path.isfile(model_name + '_results.csv'):
         past_params = pd.DataFrame(np.array(params).reshape(1,18), columns = param_names)
         past_params.to_csv(model_name + "_results.csv")
     elif os.path.isfile(model_name + '_results.csv'):
-        global past_params
+        params = np.array(params)
         past_params = past_params.values
-        past_params.append(params)
+        
         past_params = pd.DataFrame(past_params, columns = param_names)
         past_params.to_csv(model_name + '_results.csv')
-    print ("Run completed with " + str(params[16]*100) + " percent accuracy")
+    #print ("Run completed with " + str(params[16]*100) + " percent accuracy")
 
 
 for i in range(3):
