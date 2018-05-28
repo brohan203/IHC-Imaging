@@ -205,9 +205,8 @@ def parameter_generator():
     global past_params
     global param_grid
     parameters = []
-    run = 0
     # If first run, do default parameters
-    if not os.path.isfile(model_name + '_results.csv'):
+    if not os.path.isfile('C:' + model_name + '_results.csv'):
         parameters = ['relu', 'relu', 'relu', 'relu', 'relu', 'relu', 
                       1e-6, 'rmsprop', 2, 0.3, 0.4, 0.5, 1, 0.001, 2 ]
 
@@ -218,8 +217,7 @@ def parameter_generator():
         while True:
             index = past_params['accuracy'].idmax()
             parameters = past_params.values.tolist()[index]
-            run = parameters[15]
-            del parameters[-3:]
+            del parameters[-2:]
             index = np.random.randint(0, 15)
             hyperparameter = param_names[index]
             parameters[index] = random.choice(list(param_grid[hyperparameter]))
@@ -231,54 +229,49 @@ def parameter_generator():
     else:
         while True:
             parameters = past_params.values.tolist()[-1]
-            run = parameters[15]
-            del parameters[-3:]
+            del parameters[-2:]
             index = np.random.randint(0, 15)
             hyperparameter = param_names[index]
             parameters[index] = random.choice(list(param_grid[hyperparameter]))
             if not parameters in past_params.values:
                 break
+    return parameters
 
-    return parameters, run
-
-
-past_params = None
 if os.path.isfile(model_name + "_results.csv"):
     past_params = pd.read_csv(model_name + "_results.csv")
-    # Pop unnamed column 
+    past_params.drop('Unnamed: 0', axis=1, inplace=True)
+else:
+    past_params = None
 
 
 def run():
     # Generate parameters. Uses randomization
-    #print ("\nCreating parameters...\n")
-    params, run = parameter_generator()
+    print ("\nCreating parameters...")
+    params = parameter_generator()
     # Make model based on parameters
-    #print ("\nCreating model...\n")
-    #model = model_generator(params)
+    print ("\nCreating model...")
+    model = model_generator(params)
     # Run model with parameters
-    #print ("\nRunning model...\n")
-    #score = run_model(model, param_dict)
-    score = [566, 0.1] # Made up results for testing, delete for real run
-    #print ("\nRecording results...\n")
+    print ("\nRunning model...")
+    score = run_model(model, params)
+    #score = [566, 0.1] # Made up results for testing, delete for real run
+    print ("\nRecording results...")
     # Add parameters + results to past_params
-    params.append(run)
     params.append(score[1])
     params.append(score[0])
     global param_names
     global past_params
     if not os.path.isfile(model_name + '_results.csv'):
-        past_params = pd.DataFrame(np.array(params).reshape(1,18), columns = param_names)
+        past_params = pd.DataFrame(np.array(params).reshape(1,17), columns = param_names)
         past_params.to_csv(model_name + "_results.csv")
     elif os.path.isfile(model_name + '_results.csv'):
         params = np.array(params)
-        past_params = past_params.values
-        
-        past_params = pd.DataFrame(past_params, columns = param_names)
+        past_params.loc[len(past_params.index)] = params
         past_params.to_csv(model_name + '_results.csv')
     #print ("Run completed with " + str(params[16]*100) + " percent accuracy")
 
 
-for i in range(3):
+for i in range(500):
     run()
 
 
