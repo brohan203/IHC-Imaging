@@ -12,6 +12,8 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras.layers import Dense, Activation, Flatten, Dropout, BatchNormalization
 from keras.layers import Conv2D, MaxPooling2D
 from keras import regularizers, optimizers
+# Visualisation
+import matplotlib.pyplot as plt
 # Numpy is bae <3
 import numpy as np
 import random
@@ -22,7 +24,7 @@ import pandas as pd
 # The following are parameters for the import data and model. I like to keep them at the top
 
 model_name = 'NHIcxr'
-num_classes = 15                                                            # Number of classes should the model should distinguish
+num_classes = 2                                                             # Number of classes should the model should distinguish
 img_width, img_height = 1024, 1024                                          # Width and height of images in dataset
 img_shape = (1024, 1024, 3)                                                 # Shape of the image (width, height, depth)
 max_queue_num = 2                                                           # Maximum size of generator queue
@@ -35,7 +37,9 @@ train_data_dir = 'data/train'                                               # Lo
 validation_data_dir = 'data/validation'                                     # Location of validation data (for estimating training quality)
 test_data_dir = 'data/test'                                                 # Location of testing data (for application)
 
-
+param_names = ['activation1', 'activation2', 'activation3', 'activation4', 'activation5', 'activation6',
+               'decay',       'optimizer',   'batch_size',  'dropout1',    'dropout2',    'dropout3',
+               'epochs',      'lr1',         'baseMapNum',  'run',         'accuracy',    'loss'        ]
 #=================================================================================================================================D
 # Here are functions that produce/run models and parameters. Want me to explain this shit? Too bad, I can't. Get shrekt, m9
 
@@ -108,75 +112,73 @@ def run_model(model, parameters):
     train_generator = train_datagen.flow_from_directory(
         train_data_dir,
         target_size=(img_width, img_height),
-        batch_size=param_dict['batch_size'],
+        batch_size=batch_size,
         class_mode='categorical')
 
     validation_generator = test_datagen.flow_from_directory(
         validation_data_dir,
         target_size=(img_width, img_height),
-        batch_size=param_dict['batch_size'],
+        batch_size=batch_size,
         class_mode='categorical')
 
     test_generator = test_datagen.flow_from_directory(
         test_data_dir,
         target_size=(img_width, img_height),
-        batch_size=param_dict['batch_size'],
+        batch_size=batch_size,
         class_mode='categorical')
 
 
     # Training
     # Run 1
     # With optimization, compilation, and generation
-    opt_rms = keras.optimizers.rmsprop(lr=param_dict['lr1'],decay=1e-6)
+    model_optimizer = str('model_optimizer = keras.optimizers.' + optimizer + '(lr=' + str(lr1) + ', decay=1e-6)')
+    exec(model_optimizer)
     model.compile(loss='categorical_crossentropy',
-            optimizer=opt_rms,
+            optimizer=model_optimizer,
             metrics=['accuracy'])
     hist1 = model.fit_generator(
         train_generator,
-        steps_per_epoch=nb_train_samples // param_dict['batch_size'],
-        epochs=param_dict['epochs']*3,
+        steps_per_epoch=nb_train_samples // batch_size,
+        epochs=epochs*3,
         validation_data=validation_generator,
-        validation_steps=nb_validation_samples // param_dict['batch_size'])
+        validation_steps=nb_validation_samples // batch_size)
 
     # Run 2
     # With optimization, compilation, and generation
-    opt_rms = keras.optimizers.rmsprop(lr=param_dict['lr1']/2,decay=1e-6)
+    model_optimizer = str('model_optimizer = keras.optimizers.' + optimizer + '(lr=' + str(lr1/2) + ', decay=1e-6)')
+    exec(model_optimizer)
     model.compile(loss='categorical_crossentropy',
-            optimizer=opt_rms,
+            optimizer=model_optimizer,
             metrics=['accuracy'])
     hist2 = model.fit_generator(
         train_generator,
-        steps_per_epoch=nb_train_samples // param_dict['batch_size'],
-        epochs=param_dict['epochs'],
+        steps_per_epoch=nb_train_samples // batch_size,
+        epochs=epochs,
         validation_data=validation_generator,
-        validation_steps=nb_validation_samples // param_dict['batch_size'])
+        validation_steps=nb_validation_samples // batch_size)
 
     # Run 3
     # With optimization, compilation, and generation
-    opt_rms = keras.optimizers.rmsprop(lr=param_dict['lr1']/3,decay=1e-6)
+    model_optimizer = str('model_optimizer = keras.optimizers.' + optimizer + '(lr=' + str(lr1/3) + ', decay=1e-6)')
+    exec(model_optimizer)
     model.compile(loss='categorical_crossentropy',
-            optimizer=opt_rms,
+            optimizer=model_optimizer,
             metrics=['accuracy'])
     hist3 = model.fit_generator(
         train_generator,
-        steps_per_epoch=nb_train_samples // param_dict['batch_size'],
-        epochs=param_dict['epochs'],
+        steps_per_epoch=nb_train_samples // batch_size,
+        epochs=epochs,
         validation_data=validation_generator,
-        validation_steps=nb_validation_samples // param_dict['batch_size'])
+        validation_steps=nb_validation_samples // batch_size)
     model.save_weights(model_name + '_ep' + str(epochs*5) + '.h5')
-
-
-    loss = hist1.history['loss']
-    accuracy = 
-
-
 
     # Testin with test folder data
     score = model.evaluate_generator(
         test_generator, 
         steps=10)
     print (score)
-    return score, history
+    # Returning only hist1 for now, will write code to join 1-3 later
+    return score, hist1
 
 past_params = None
 if os.path.isfile(model_name + "_results.csv"):
@@ -186,36 +188,43 @@ if os.path.isfile(model_name + "_results.csv"):
 
 def run():
     # Generate parameters. Uses randomization
-    print ("\nCreating parameters...\n")
+    print ("\nCreating parameters...")
     params = ['relu', 'relu', 'relu', 'relu', 'relu', 'relu',    # Activations
               1e-6, 'rmsprop', 2, 0.3, 0.4, 0.5, 1, 0.001, 2 ]   # Decay, optimizer, batch size, dropouts, epochs, learning rate, baseMapNum
     # Make model based on parameters
-    print ("\nCreating model...\n")
+    print ("\nCreating model...")
     model = model_generator(params)
     # Run model with parameters
-    print ("\nRunning model...\n")
-    score, history = run_model(model, param_dict)
-    print ("\nRecording results...\n")
+    print ("\nRunning model...")
+    score, history = run_model(model, params)
+    print ("\nRecording results...")
     # Add parameters + results to past_params
-    params.append(run)
-    params.append(score[1])
-    params.append(score[0])
-    global param_names
-    global past_params
-    if not os.path.isfile(model_name + '_results.csv'):
-        past_params = pd.DataFrame(np.array(params).reshape(1,18), columns = param_names)
-        past_params.to_csv(model_name + "_results.csv")
-    elif os.path.isfile(model_name + '_results.csv'):
-        params = np.array(params)
-        past_params = past_params.values
+    # params.append(run)
+    # params.append(score[1])
+    # params.append(score[0])
+    print score
+    plt.plot(history.history['acc'])
+    plt.plot(history.history['val_acc'])
+    plt.title('model accuracy')
+    plt.ylabel('accuracy')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc='upper left')
+    plt.show()
+    # global param_names
+    # global past_params
+    # if not os.path.isfile(model_name + '_results.csv'):
+    #     past_params = pd.DataFrame(np.array(params).reshape(1,18), columns = param_names)
+    #     past_params.to_csv(model_name + "_results.csv")
+    # elif os.path.isfile(model_name + '_results.csv'):
+    #     params = np.array(params)
+    #     past_params = past_params.values
         
-        past_params = pd.DataFrame(past_params, columns = param_names)
-        past_params.to_csv(model_name + '_results.csv')
+    #     past_params = pd.DataFrame(past_params, columns = param_names)
+    #     past_params.to_csv(model_name + '_results.csv')
     #print ("Run completed with " + str(params[16]*100) + " percent accuracy")
 
 
-for i in range(3):
-    run()
+run()
 
 
 

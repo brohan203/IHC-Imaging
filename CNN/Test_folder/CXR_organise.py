@@ -21,12 +21,15 @@ csv_file = "Data_Entry_2017.csv"						# CSV file for how to organise the image d
 zipped_files = "archives"								# Where the raw image data is located
 category_list = []											# Initializing a list of categories. Will be filled later
 subfolder = "images"									# If the images are stored within a subfolder, write name in quotes. Otherwise use None
-subfolder_length = len(subfolder) + 1
 
 # This stuff you just have to know
 image_name_column = "Image Index"						# Name of column in which "image name" is placed
 category_column = "Finding Labels"						# Name of column in which "diagnosis" is placed
-half_extract_command = None								# Declaring extract command. Depends on compression method
+
+# How to organise data
+train = .8
+validation = 0.1
+
 
 # Make data folders
 shutil.rmtree('data', ignore_errors=True)
@@ -65,16 +68,16 @@ def organise():
 	test = 0
 	total = 0
 	for image in os.listdir('tmp/images'):
-		integer = random.randint(1,4)
+		random_num = random.random()
 		image_name = str(image)
 		row = dataframe.loc[dataframe[image_name_column] == image_name]
 		category = str(row.iloc[0][category_column])
 		# Put 25% of data in "train", 25% in "validation", and 50% in "test"
-		if integer == 1:
+		if random_num < train:
 			subprocess.call(["mv", "tmp/images/" + image_name, "data/train/" + category])
 			train += 1
 			total += 1
-		elif integer == 2:
+		elif random_num > train and random_num < (train+validation):
 			subprocess.call(["mv", "tmp/images/" + image_name, "data/validation/" + category])
 			validation += 1
 			total += 1
@@ -88,15 +91,12 @@ def organise():
 	print "Test folder contains " + str(test) + " images, " + str(float(test/total)) + "percent of data"
 
 
-
-
 # Iterate through all files in your "tar_files" folder 
 # Filename is the zipped file, and is extracted to 'tmp' in a folder with its own name
 # Works for .tar, .tar.gz, .tgz, .tar.bz2, .tbz files.
 def extract():
 	for filename in os.listdir(zipped_files):
 		print "Extracting " + str(filename)
-		os.mkdir('tmp/' + str(filename))
 		# Firstly, load the zipped file into a temporary file... called file.
 		if filename.endswith('.tar') or filename.endswith('.tar.gz') or filename.endswith('.tgz') or filename.endswith('.tar.bz2') or filename.endswith('.tbz'):
 			tar = tarfile.open(zipped_files + '/' + filename)
@@ -112,3 +112,10 @@ print "Beginning organisation"
 organise()
 print "\n========================"
 print "Finished organising, process complete."
+
+
+
+
+
+
+
