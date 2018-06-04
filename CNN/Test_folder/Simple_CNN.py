@@ -79,6 +79,7 @@ def model_generator( parameters ):
 
     model.add(Flatten())
     model.add(Dense(num_classes, activation='softmax'))
+    model.summary()
 
     return model
 
@@ -98,7 +99,7 @@ def run_model(model, parameters):
         samplewise_std_normalization=False,
         zca_whitening=False,
         rotation_range=0,
-       width_shift_range=0.1,
+        width_shift_range=0.1,
         height_shift_range=0.1,
         horizontal_flip=False,
         vertical_flip=False
@@ -180,17 +181,12 @@ def run_model(model, parameters):
     # Returning only hist1 for now, will write code to join 1-3 later
     return score, hist1
 
-past_params = None
-if os.path.isfile(model_name + "_results.csv"):
-    past_params = pd.read_csv(model_name + "_results.csv")
-    # Pop unnamed column 
-
 
 def run():
     # Generate parameters. Uses randomization
     print ("\nCreating parameters...")
     params = ['relu', 'relu', 'relu', 'relu', 'relu', 'relu',    # Activations
-              1e-6, 'rmsprop', 2, 0.3, 0.4, 0.5, 1, 0.001, 2 ]   # Decay, optimizer, batch size, dropouts, epochs, learning rate, baseMapNum
+              1e-6, 'adam', 2, 0.3, 0.4, 0.5, 1, 0.001, 2 ]   # Decay, optimizer, batch size, dropouts, epochs, learning rate, baseMapNum
     # Make model based on parameters
     print ("\nCreating model...")
     model = model_generator(params)
@@ -227,14 +223,8 @@ def run():
 run()
 
 
-
 """
 To do:
 Add dataframe + csv support
 Add optimizer to run_model
 """
-
-
-
-
-
