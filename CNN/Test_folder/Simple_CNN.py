@@ -1,3 +1,5 @@
+# Sky Trish ???
+
 # Rohan Borkar
 # Neural network
 # For big image datasets. Like 10k+ samples.
