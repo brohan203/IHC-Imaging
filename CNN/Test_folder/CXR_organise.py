@@ -75,20 +75,10 @@ def organise():
 		# Put 25% of data in "train", 25% in "validation", and 50% in "test"
 		if random_num < train:
 			subprocess.call(["mv", "tmp/images/" + image_name, "data/train/" + category])
-			train += 1
-			total += 1
 		elif random_num > train and random_num < (train+validation):
 			subprocess.call(["mv", "tmp/images/" + image_name, "data/validation/" + category])
-			validation += 1
-			total += 1
 		else:
 			subprocess.call(["mv", "tmp/images/" + image_name, "data/test/" + category])
-			test += 1
-			total += 1
-	print "Organisation and sorting results:"
-	print "Training folder contains " + str(train) + " images, " + str(float(train/total)) + "percent of data"
-	print "Validation folder contains " + str(validation) + " images, " + str(float(validation/total)) + "percent of data"
-	print "Test folder contains " + str(test) + " images, " + str(float(test/total)) + "percent of data"
 
 
 # Iterate through all files in your "tar_files" folder 
